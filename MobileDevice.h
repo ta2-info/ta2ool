@@ -36,6 +36,7 @@ uint32_t AMDeviceCreateHouseArrestService(AMDeviceRef amDeviceRef, CFStringRef b
 uint32_t AFCDirectoryOpen(AFCConnectionRef afcConnectionRef, const char* name, AFCIteratorRef *iteratorRef);
 uint32_t AFCDirectoryRead(AFCConnectionRef afcConnectionRef, AFCIteratorRef iteratorRef, const char** ptr);
 uint32_t AFCDirectoryClose(AFCConnectionRef afcConnectionRef, AFCIteratorRef iteratorRef);
+uint32_t AFCDirectoryCreate(AFCConnectionRef afcConnectionRef, const char* name);
 uint32_t AFCFileInfoOpen(AFCConnectionRef afcConnectionRef, const char* name, AFCIteratorRef *ptr);
 uint32_t AFCKeyValueRead(AFCIteratorRef iteratorRef, const char **keyPtr, const char **valuePtr);
 uint32_t AFCKeyValueClose(AFCIteratorRef iteratorRef);
@@ -44,6 +45,7 @@ uint32_t AFCFileRefOpen(AFCConnectionRef afcConnectionRef, const char* name, int
 uint32_t AFCFileRefClose(AFCConnectionRef afcConnectionRef, AFCFileDescriptorRef descRef);
 uint32_t AFCFileRefRead(AFCConnectionRef afcConnectionRef, AFCFileDescriptorRef descRef, void *result, long *length);
 uint32_t AFCRemovePath(AFCConnectionRef afcConnectionRef, const char* name);
+uint32_t AFCRenamePath(AFCConnectionRef afcConnectionRef, const char *oldpath, const char *newpath);
 
 uint32_t AMDeviceStopSession(AMDeviceRef deviceRef);
 uint32_t AMDeviceDisconnect(AMDeviceRef deviceRef);

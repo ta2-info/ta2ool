@@ -171,11 +171,107 @@ void pullFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *target
       futimens(fd, times);
       close(fd);
     }
+    resultCode = AFCFileRefClose(afcCnn, fileDesc);
+    printf("resultCode = %d\n", resultCode);
 
+    
+  }
+}
+
+
+/*
+ ローカル   リモート   動作
+---------------------------------------------
+ null       *          エラー!!
+ *          null       エラー!!
+*/
+void pushFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *localPathOrDir, const char *targetPath) {
+  if (localPathOrDir == nullptr || targetPath == nullptr) {
+    fprintf(stderr, "ERR: Invalid Argument.\n");
+    return;
   }
 
+  // resultCode
+  // 7: パラメータエラー的なやつ?
+  // 8: 存在しない的なやつ?
+  // 10: 権限的なやつ?
 
-  resultCode = AFCFileRefClose(afcCnn, fileDesc);
+  // flag 1 : Readっぽい
+  // flag 2~7 : なくても新規作成する。あっても成功する
+
+  AFCFileDescriptorRef fileDesc = nullptr;
+  for (int i = 0; i < 256; i++) {
+  char fileName[32];
+  sprintf(fileName, "Documents/test%d", i);
+  uint32_t resultCode = AFCFileRefOpen(afcCnn, fileName, i, &fileDesc);
+  printf("i = %d : resultCode = %d\n", i, resultCode);
+  }
+}
+
+void removeFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *path) {
+  uint32_t resultCode;
+  AFCIteratorRef iterator;
+  resultCode = AFCFileInfoOpen(afcCnn, path, &iterator);
+  if (resultCode != 0 || iterator == nullptr) {
+    // 権限的な場合は 7 を返す
+    // 存在しない場合は 8 を返す
+    fprintf(stderr, "ファイルの情報を取得できませんでした。(0x%08X)\n", resultCode);
+    return;
+  }
+
+  bool isDir = false;
+  while (1) {
+    const char* key = nullptr;
+    const char* value = nullptr;
+    AFCKeyValueRead(iterator, &key, &value);
+    if (key == nullptr) {
+      break;
+    }
+    if ((strcmp("st_ifmt", key) == 0) && (strcmp("S_IFDIR", value) == 0)) {
+      isDir = true;
+    }
+  }
+  AFCKeyValueClose(iterator);
+
+  if (isDir == false) {
+    // ファイルの場合
+    resultCode = AFCRemovePath(afcCnn, path);
+    if (resultCode == 0) {
+      printf("削除しました\n");
+    } else {
+      printf("resultCode = %d\n", resultCode);
+    }
+  } else {
+    // ディレクトリの場合
+    resultCode = AFCRemovePath(afcCnn, path);
+    if (resultCode == 0) {
+      printf("削除しました\n");
+    } else {
+      printf("resultCode = %d\n", resultCode);
+if (resultCode == 1) {
+  fprintf(stderr, "※ディレクトリ内が空ではない時はエラーコード 1 を返却するようだ\n");
+}
+    }
+  }
+
+}
+
+
+void renameFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *oldpath, const char *newpath) {
+  uint32_t resultCode;
+  resultCode = AFCRenamePath(afcCnn, oldpath, newpath);
+  if (resultCode != 0) {
+    printf("resultCode = %d\n", resultCode);
+  }
+}
+
+void makeDirectory(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *path) {
+  uint32_t resultCode;
+  resultCode = AFCDirectoryCreate(afcCnn, path);
   printf("resultCode = %d\n", resultCode);
+
+  // 0: 成功
+  // 10: 権限拒否?(セキュリティ的理由のほう)
+  // 16: 指定された名称のファイルが既に存在する
 }
 

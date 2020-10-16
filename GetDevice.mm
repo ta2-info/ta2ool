@@ -22,8 +22,8 @@ AMDeviceRef GetTargetDevice(Options *options) {
 
   AMDeviceConnect(device);
   resultCode = AMDeviceStartSession(device);
-  if (resultCode == 0xe8000025) {
-    // 未ペアリング
+  if (resultCode == 0xe8000025 || resultCode == 0xe800001c) {
+    // 未ペアリング or 信頼されていない
     AMDevicePair(device);
     return nullptr;
   }
