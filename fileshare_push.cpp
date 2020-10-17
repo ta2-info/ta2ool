@@ -23,6 +23,8 @@ void fileshare_pushCommand(Options *options) {
   const char * targetPath = options->GetNextArgument();
   if (targetPath != nullptr) {
     strcat(tmpPath, targetPath);
+  } else {
+    strcat(tmpPath, localPathOrDir);
   }
 
   AMDeviceRef deviceRef = GetTargetDevice(options);

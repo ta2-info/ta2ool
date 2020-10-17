@@ -4,6 +4,26 @@
 #include <string.h>
 #include <sys/stat.h>
 
+void setTimestamp(AFCConnectionRef afcCnn, const char *filePath, uint64_t timestamp) {
+  CFAllocatorRef allocatorRef = CFGetAllocator(afcCnn);
+
+  CFStringRef filePathRef = CFStringCreateWithCString(nullptr, filePath, kCFStringEncodingUTF8);
+  AFCOperationRef operationRef = AFCOperationCreateSetModTime(allocatorRef, filePathRef, timestamp, nullptr);
+  CFRelease(filePathRef);
+
+  double timeout = AFCConnectionGetIOTimeout(afcCnn);
+  AFCConnectionProcessOperation(afcCnn, operationRef, timeout);
+  CFRelease(operationRef);
+  CFRelease(allocatorRef);
+}
+
+
+
+// resultCode
+// 7: パラメータエラー的なやつ?
+// 8: 存在しない的なやつ?
+// 10: 権限的なやつ?
+
 const char * getFilename(const char *filePath) {
   int len = strlen(filePath);
   for (int i = len - 1; i >= 0; i--) {
@@ -136,6 +156,7 @@ void pullFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *target
   AFCKeyValueClose(iterator);
 
   if (isDir) {
+    // TODO: ディレクトリのサポート
     fprintf(stderr, "ディレクトリはまだサポートしていないのでファイルを指定してください。\n");
     return;
   }
@@ -184,6 +205,8 @@ void pullFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *target
 ---------------------------------------------
  null       *          エラー!!
  *          null       エラー!!
+ file       dir        指定したローカルのファイル名で作成
+ 他                    まだサポートしていない
 */
 void pushFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *localPathOrDir, const char *targetPath) {
   if (localPathOrDir == nullptr || targetPath == nullptr) {
@@ -191,21 +214,71 @@ void pushFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *localP
     return;
   }
 
-  // resultCode
-  // 7: パラメータエラー的なやつ?
-  // 8: 存在しない的なやつ?
-  // 10: 権限的なやつ?
-
-  // flag 1 : Readっぽい
-  // flag 2~7 : なくても新規作成する。あっても成功する
-
-  AFCFileDescriptorRef fileDesc = nullptr;
-  for (int i = 0; i < 256; i++) {
-  char fileName[32];
-  sprintf(fileName, "Documents/test%d", i);
-  uint32_t resultCode = AFCFileRefOpen(afcCnn, fileName, i, &fileDesc);
-  printf("i = %d : resultCode = %d\n", i, resultCode);
+  struct stat statinfo;
+  if (stat(localPathOrDir, &statinfo) == -1) {
+    fprintf(stderr, "ローカルのパスの指定が間違っている可能性がある\n");
+    return;
   }
+
+  if ((statinfo.st_mode & S_IFMT) == S_IFDIR) {
+    // TODO: ディレクトリのサポート
+    fprintf(stderr, "ディレクトリはまだサポートしていないのでファイルを指定してください。\n");
+    return;
+  }
+
+  long readSize = statinfo.st_size;
+  uint8_t* result = (uint8_t*)malloc(readSize);
+  if (result == nullptr) {
+    fprintf(stderr, "メモリ確保に失敗しました。ファイルが大きすぎるのでは？\n");
+    return;
+  }
+  int fd = open(localPathOrDir, O_RDONLY);
+  long doneSize = 0;
+  while (doneSize < readSize) {
+    long tmp = read(fd, result + doneSize, (readSize - doneSize));
+    if (tmp > 0) {
+      doneSize += tmp;
+    } else {
+      fprintf(stderr, "正常にファイル読み込みをできない\n");
+      close(fd);
+      free(result);
+      return;
+    }
+  }
+  close(fd);
+
+  // 保存先のファイル作成
+  AFCFileDescriptorRef fileDesc = nullptr;
+  // falg を 1はファイルがない場合は作成してくれないので向かない
+  // flag が 2〜7の場合のみファイルがない場合は新規作成する。ただしファイルがある場合の振る舞いが以下のように異なる。
+  // flag を 2で作るとファイルを小さくできない(サイズそのままの状態の上書き用途)
+  // flag を 3,4,7でopenするとサイズ0スタートになるので切り詰め可能(3,4,7での違いはまだ不明)
+  // flag を 5,6にすると追記っぽい(5,6の違いは不明)
+  uint32_t resultCode = AFCFileRefOpen(afcCnn, targetPath, 3, &fileDesc);
+  if (resultCode == 0) {
+    doneSize = 0;
+    while (doneSize < readSize) {
+      long writeSize = readSize - doneSize;
+      resultCode = AFCFileRefWrite(afcCnn, fileDesc, result + doneSize, writeSize);
+      if (writeSize > 0) {
+        doneSize += writeSize;
+      } else {
+        fprintf(stderr, "正常にファイルを書き込めない\n");
+        AFCFileRefClose(afcCnn, fileDesc);
+        free(result);
+        return;
+      }
+    }
+    resultCode = AFCFileRefClose(afcCnn, fileDesc);
+
+    // Update timestamp
+    setTimestamp(afcCnn, targetPath, statinfo.st_mtime * 1000000000);
+  } else {
+    printf("ファイルを作成できない\n");
+  }
+  free(result);
+
+  printf("resultCode = %d\n", resultCode);
 }
 
 void removeFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *path) {
@@ -251,6 +324,9 @@ void removeFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *path
 if (resultCode == 1) {
   fprintf(stderr, "※ディレクトリ内が空ではない時はエラーコード 1 を返却するようだ\n");
 }
+
+// TODO: 強制的に消す仕組みを用意したい （例えば ディレクトリ名/* と指定することでディレクトリ配下は消えるとか）
+
     }
   }
 

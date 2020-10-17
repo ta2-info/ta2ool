@@ -9,6 +9,7 @@ typedef CFTypeRef AFCIteratorRef;
 typedef CFTypeRef AMDeviceRef;
 typedef CFTypeRef AMDServiceConnectionRef;
 typedef CFTypeRef AFCFileDescriptorRef;
+typedef CFTypeRef AFCOperationRef;
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +34,8 @@ uint32_t AFCConnectionOpen(int handle, int32_t timeout, AFCConnectionRef *);
 
 uint32_t AMDeviceCreateHouseArrestService(AMDeviceRef amDeviceRef, CFStringRef bundleIDRef, CFDictionaryRef optionsRef, AFCConnectionRef *ptr);
 
+uint64_t AFCConnectionGetIOTimeout(AFCConnectionRef afcConnectionRef);
+uint32_t AFCConnectionProcessOperation(AFCConnectionRef afcConnectionRef, AFCOperationRef operationRef, double timeout);
 uint32_t AFCDirectoryOpen(AFCConnectionRef afcConnectionRef, const char* name, AFCIteratorRef *iteratorRef);
 uint32_t AFCDirectoryRead(AFCConnectionRef afcConnectionRef, AFCIteratorRef iteratorRef, const char** ptr);
 uint32_t AFCDirectoryClose(AFCConnectionRef afcConnectionRef, AFCIteratorRef iteratorRef);
@@ -44,8 +47,11 @@ uint32_t AFCConnectionClose(AFCConnectionRef afcConection);
 uint32_t AFCFileRefOpen(AFCConnectionRef afcConnectionRef, const char* name, int flags, AFCFileDescriptorRef *ptr);
 uint32_t AFCFileRefClose(AFCConnectionRef afcConnectionRef, AFCFileDescriptorRef descRef);
 uint32_t AFCFileRefRead(AFCConnectionRef afcConnectionRef, AFCFileDescriptorRef descRef, void *result, long *length);
+uint32_t AFCFileRefWrite(AFCConnectionRef afcConnectionRef, AFCFileDescriptorRef descRef, void *result, long length);
 uint32_t AFCRemovePath(AFCConnectionRef afcConnectionRef, const char* name);
 uint32_t AFCRenamePath(AFCConnectionRef afcConnectionRef, const char *oldpath, const char *newpath);
+AFCOperationRef AFCOperationCreateSetModTime(CFAllocatorRef allocator, CFStringRef
+ filePath, uint64_t time, void* context);
 
 uint32_t AMDeviceStopSession(AMDeviceRef deviceRef);
 uint32_t AMDeviceDisconnect(AMDeviceRef deviceRef);

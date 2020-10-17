@@ -17,7 +17,7 @@ void helpCommand(Options *options) {
   printf("  fileshare_rename bundleID beforePath afterPath\n");
   printf("  fileshare_mkdir bundleID path\n");
   printf("  fileshare_pull bundleID pathInDevice [filePathOrDirectoryInLocal]\n");
-//  printf("  fileshare_push bundleID filePathOrDirectoryInLocal [path]\n");
+  printf("  fileshare_push bundleID filePathOrDirectoryInLocal [path]\n");
   printf("  file_ls [path]\n");
   printf("  file_pull pathInDevice [filePathOrDirectoryInLocal]\n");
   printf("  file_rm path\n");
