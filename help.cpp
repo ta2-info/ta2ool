@@ -27,5 +27,6 @@ void helpCommand(Options *options) {
   printf("  uninstall_app bundleID\n");
   printf("  location latitude longitude\n");
   printf("  location_reset\n");
+  printf("  show_devmode\n");
 }
 

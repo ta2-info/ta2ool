@@ -19,6 +19,8 @@ CFArrayRef AMDCreateDeviceList(void);
 uint32_t AMDCopyArrayOfDevicesMatchingQuery(CFArrayRef targetListRef, CFDictionaryRef queryRef, CFArrayRef *resultRef);
 uint32_t AMDServiceConnectionSend(AMDServiceConnectionRef serviceConnectionRef, const void *, uint32_t length);
 uint32_t AMDServiceConnectionReceive(AMDServiceConnectionRef serviceConnectionRef, void *, uint32_t length);
+uint32_t AMDServiceConnectionSendMessage(AMDServiceConnectionRef serviceConnectionRef, CFPropertyListRef message, CFPropertyListFormat format);
+uint32_t AMDServiceConnectionReceiveMessage(AMDServiceConnectionRef serviceConnectionRef, CFPropertyListRef message, CFPropertyListFormat *format);
 
 uint32_t AMDeviceConnect(AMDeviceRef deviceRef);
 uint32_t AMDeviceStartSession(AMDeviceRef deviceRef);
