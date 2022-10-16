@@ -19,7 +19,15 @@ void printInfo(AMDeviceRef device, const char *header, const char *domain, const
       char valueBuffer[1024];
       CFStringGetCString((CFStringRef) valueRef, valueBuffer, sizeof(valueBuffer), kCFStringEncodingUTF8);
       printf("%s\t%s\n", header, valueBuffer);
+    } else if (CFGetTypeID(valueRef) == CFBooleanGetTypeID()) {
+      Boolean value = CFBooleanGetValue((CFBooleanRef) valueRef);
+      printf("%s\t%s\n", header, (value ? "True" : "False"));
+    } else {
+      printf("%s\t??\n", header);
+      CFShow(valueRef);
     }
+  } else {
+    printf("%s\tNULL\n", header);
   }
 
   if (valueRef != nullptr) {
@@ -49,6 +57,15 @@ void deviceinfoCommand(Options *options) {
   printInfo(deviceRef, "serial", nullptr, "SerialNumber");
   printInfo(deviceRef, "Model", nullptr, "ModelNumber");
 
+  printInfo(deviceRef, "BuildVersion", nullptr, "BuildVersion");
+  printInfo(deviceRef, "CPUArchitecture", nullptr, "CPUArchitecture");
+  printInfo(deviceRef, "DeveloperStatus", "com.apple.xcode.developerdomain", "DeveloperStatus");
+  printInfo(deviceRef, "IsInternal", "com.apple.mobile.internal", "IsInternal");
+  printInfo(deviceRef, "BonjourFullServiceName", "com.apple.mobile.wireless_lockdown", "BonjourFullServiceName");
+  printInfo(deviceRef, "EnableWifiDebugging", "com.apple.mobile.wireless_lockdown", "EnableWifiDebugging");
+  printInfo(deviceRef, "WirelessHosts", "com.apple.xcode.developerdomain", "WirelessHosts");
+
+  printInfo(deviceRef, "DeveloperModeStatus", "com.apple.security.mac.amfi", "DeveloperModeStatus");
   ReleaseTargetDevice(deviceRef);
 }
 
