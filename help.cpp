@@ -28,5 +28,6 @@ void helpCommand(Options *options) {
   printf("  location latitude longitude\n");
   printf("  location_reset\n");
   printf("  show_devmode\n");
+  printf("  syslog\n");
 }
 
