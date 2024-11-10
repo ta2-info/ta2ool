@@ -20,6 +20,7 @@ void helpCommand(Options *options) {
   printf("  fileshare_push bundleID filePathOrDirectoryInLocal [path]\n");
   printf("  file_ls [path]\n");
   printf("  file_pull pathInDevice [filePathOrDirectoryInLocal]\n");
+  printf("  file_push filePathOrDirectoryInLocal path\n");
   printf("  file_rm path\n");
   printf("  app_ls bundleID [path]\n");
   printf("  app_pull bundleID pathInDevice [filePathOrDirectoryInLocal]\n");

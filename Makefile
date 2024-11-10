@@ -4,7 +4,7 @@ CXX = clang++
 CXXFLAGS = -std=c++11 -g -fobjc-arc
 LDFLAGS = -isysroot $(shell xcrun --sdk macosx --show-sdk-path) -framework Foundation -framework CoreFoundation -F/Library/Apple/System/Library/PrivateFrameworks -framework MobileDevice
 
-OBJS = main.o common.o Options.o GetDevice.o help.o listdevice.o deviceinfo.o listapp.o listappname.o listappraw.o fileshare_mkdir.o fileshare_ls.o fileshare_rename.o fileshare_rm.o fileshare_pull.o fileshare_push.o listfilesharedapp.o file_ls.o file_pull.o file_rm.o app_ls.o app_pull.o install_app.o uninstall_app.o location.o location_reset.o show_devmode.o syslog.o
+OBJS = main.o common.o Options.o GetDevice.o help.o listdevice.o deviceinfo.o listapp.o listappname.o listappraw.o fileshare_mkdir.o fileshare_ls.o fileshare_rename.o fileshare_rm.o fileshare_pull.o fileshare_push.o listfilesharedapp.o file_ls.o file_pull.o file_rm.o app_ls.o app_pull.o install_app.o uninstall_app.o location.o location_reset.o show_devmode.o syslog.o file_push.o
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
