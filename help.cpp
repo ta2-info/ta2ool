@@ -24,6 +24,7 @@ void helpCommand(Options *options) {
   printf("  file_rm path\n");
   printf("  app_ls bundleID [path]\n");
   printf("  app_pull bundleID pathInDevice [filePathOrDirectoryInLocal]\n");
+  printf("  app_push bundleID filePathOrDirectoryInLocal path\n");
   printf("  install_app path_of_ipa_or_app\n");
   printf("  uninstall_app bundleID\n");
   printf("  location latitude longitude\n");
