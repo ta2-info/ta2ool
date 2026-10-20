@@ -16,8 +16,9 @@ void fileshare_lsCommand(Options *options) {
     basePath = ".";
   }
   char tmpPath[1024];
-  strcpy(tmpPath, "Documents/");
-  strcat(tmpPath, basePath);
+  if (makeDocumentsPath(tmpPath, sizeof(tmpPath), basePath) == false) {
+    return;
+  }
 
   AMDeviceRef deviceRef = GetTargetDevice(options);
   if (deviceRef == nullptr) {

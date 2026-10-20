@@ -12,23 +12,25 @@ void fileshare_renameCommand(Options *options) {
 
   // 省略不可
   char tmpPath1[1024];
-  strcpy(tmpPath1, "Documents/");
   const char *beforePath = options->GetNextArgument();
   if (beforePath == nullptr) {
     fprintf(stderr, "変更前が指定されていない\n");
     return;
   }
-  strcat(tmpPath1, beforePath);
+  if (makeDocumentsPath(tmpPath1, sizeof(tmpPath1), beforePath) == false) {
+    return;
+  }
 
   char tmpPath2[1024];
-  strcpy(tmpPath2, "Documents/");
   // 省略不可
   const char * afterPath = options->GetNextArgument();
   if (afterPath == nullptr) {
     fprintf(stderr, "変更後が指定されていない\n");
     return;
   }
-  strcat(tmpPath2, afterPath);
+  if (makeDocumentsPath(tmpPath2, sizeof(tmpPath2), afterPath) == false) {
+    return;
+  }
 
   AMDeviceRef deviceRef = GetTargetDevice(options);
   if (deviceRef == nullptr) {

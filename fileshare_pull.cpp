@@ -15,8 +15,9 @@ void fileshare_pullCommand(Options *options) {
     return;
   }
   char tmpPath[1024];
-  strcpy(tmpPath, "Documents/");
-  strcat(tmpPath, targetPath);
+  if (makeDocumentsPath(tmpPath, sizeof(tmpPath), targetPath) == false) {
+    return;
+  }
 
   // 省略した場合は nullptr
   const char * localPathOrDir = options->GetNextArgument();

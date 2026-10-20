@@ -49,13 +49,30 @@ bool isDirInLocal(const char *pathOrDir) {
 }
 
 
+// "Documents/" + path のパスを作る。長すぎる場合は false
+bool makeDocumentsPath(char *dst, size_t dstSize, const char *path) {
+  if (snprintf(dst, dstSize, "Documents/%s", path) >= (int)dstSize) {
+    fprintf(stderr, "パスが長すぎる (%s)\n", path);
+    return false;
+  }
+  return true;
+}
+
+
 void listFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *basePath) {
   uint32_t resultCode;
 
   AFCIteratorRef dirIterator = nullptr;
   char tmpPath[1024];
-  sprintf(tmpPath, "./%s", basePath);
+  if (snprintf(tmpPath, sizeof(tmpPath), "./%s", basePath) >= (int)sizeof(tmpPath)) {
+    fprintf(stderr, "パスが長すぎる\n");
+    return;
+  }
   resultCode = AFCDirectoryOpen(afcCnn, tmpPath, &dirIterator);
+  if (resultCode != 0 || dirIterator == nullptr) {
+    fprintf(stderr, "ディレクトリを開けませんでした。(0x%08X)\n", resultCode);
+    return;
+  }
 
   const char *name = nullptr;
   while (1) {
@@ -66,15 +83,13 @@ void listFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *basePa
 
     CFTypeRef fileInfo = nullptr;
     char filepath[1024];
-    strcpy(filepath, tmpPath);
-    strcat(filepath, "/");
-    strcat(filepath, name);
+    snprintf(filepath, sizeof(filepath), "%s/%s", tmpPath, name);
 
     resultCode = AFCFileInfoOpen(afcCnn, filepath, &fileInfo);
 
     char fileType = '?';
     char timestamp[30];
-    char size[10];
+    char size[32];
     memset(timestamp, 0x0, sizeof(timestamp));
     memset(size, 0x0, sizeof(size));
 
@@ -95,19 +110,20 @@ void listFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *basePa
           continue;
         }
         if (strcmp("st_size", key) == 0) {
-          sprintf(size, "%s", value);
+          snprintf(size, sizeof(size), "%s", value);
           continue;
         }
         if (strcmp("st_mtime", key) == 0) {
           long timevalue = atol(value) / 1000000000;
-          sprintf(timestamp, "%s", asctime(localtime(&timevalue)));
-          timestamp[strlen(timestamp) - 1] = '\0';
+          strftime(timestamp, sizeof(timestamp), "%a %b %e %H:%M:%S %Y", localtime(&timevalue));
           continue;
         }
       }
+      AFCKeyValueClose(fileInfo);
     }
-    printf("%c %8s %25s  %s\n", fileType, size, timestamp, name);
+    printf("%c %12s %25s  %s\n", fileType, size, timestamp, name);
   }
+  AFCDirectoryClose(afcCnn, dirIterator);
 }
 
 
@@ -117,13 +133,26 @@ static const uint32_t kLocalError = 0xFFFFFFFF;
 // 転送時のバッファサイズ
 static const long kTransferBufferSize = 1024 * 1024;
 
-// 末尾の '/' を取り除いたパスを作る（"/" だけの場合はそのまま）
-static void trimTrailingSlash(char *dst, size_t dstSize, const char *src) {
-  snprintf(dst, dstSize, "%s", src);
+// 末尾の '/' を取り除いたパスを作る（"/" だけの場合はそのまま）。長すぎる場合は false
+static bool trimTrailingSlash(char *dst, size_t dstSize, const char *src) {
+  if (snprintf(dst, dstSize, "%s", src) >= (int)dstSize) {
+    fprintf(stderr, "パスが長すぎる (%s)\n", src);
+    return false;
+  }
   size_t len = strlen(dst);
   while (len > 1 && dst[len - 1] == '/') {
     dst[--len] = '\0';
   }
+  return true;
+}
+
+// dir + "/" + name のパスを作る。長すぎる場合は false
+static bool joinPath(char *dst, size_t dstSize, const char *dir, const char *name) {
+  if (snprintf(dst, dstSize, "%s/%s", dir, name) >= (int)dstSize) {
+    fprintf(stderr, "パスが長すぎる (%s/%s)\n", dir, name);
+    return false;
+  }
+  return true;
 }
 
 // リモートのファイル情報を取得する
@@ -254,8 +283,10 @@ static void pullDirectory(AFCConnectionRef afcCnn, const char *targetDir, const 
 
     char childTargetPath[1024];
     char childLocalPath[1024];
-    snprintf(childTargetPath, sizeof(childTargetPath), "%s/%s", targetDir, name);
-    snprintf(childLocalPath, sizeof(childLocalPath), "%s/%s", localDir, name);
+    if (joinPath(childTargetPath, sizeof(childTargetPath), targetDir, name) == false ||
+        joinPath(childLocalPath, sizeof(childLocalPath), localDir, name) == false) {
+      continue;
+    }
     pullEntry(afcCnn, childTargetPath, childLocalPath);
   }
   AFCDirectoryClose(afcCnn, dirIterator);
@@ -274,7 +305,9 @@ static void pullDirectory(AFCConnectionRef afcCnn, const char *targetDir, const 
 */
 void pullFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *targetPath, const char *localPathOrDir) {
   char remotePath[1024];
-  trimTrailingSlash(remotePath, sizeof(remotePath), targetPath);
+  if (trimTrailingSlash(remotePath, sizeof(remotePath), targetPath) == false) {
+    return;
+  }
 
   bool isDir = false;
   long fileSize = 0;
@@ -297,10 +330,14 @@ void pullFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *target
     snprintf(outputPath, sizeof(outputPath), "%s", filename);
   } else if (isDirInLocal(localPathOrDir)) {
     // 出力先ディレクトリを指定しつつ、リモートのファイル名をそのまま使う
-    snprintf(outputPath, sizeof(outputPath), "%s/%s", localPathOrDir, filename);
+    if (joinPath(outputPath, sizeof(outputPath), localPathOrDir, filename) == false) {
+      return;
+    }
   } else {
     // リモートのファイル名は使わず指定されたパスへ出力
-    snprintf(outputPath, sizeof(outputPath), "%s", localPathOrDir);
+    if (trimTrailingSlash(outputPath, sizeof(outputPath), localPathOrDir) == false) {
+      return;
+    }
   }
 
   if (isDir) {
@@ -394,8 +431,10 @@ static void pushDirectory(AFCConnectionRef afcCnn, const char *localDir, const c
 
     char childLocalPath[1024];
     char childTargetPath[1024];
-    snprintf(childLocalPath, sizeof(childLocalPath), "%s/%s", localDir, entry->d_name);
-    snprintf(childTargetPath, sizeof(childTargetPath), "%s/%s", targetDir, entry->d_name);
+    if (joinPath(childLocalPath, sizeof(childLocalPath), localDir, entry->d_name) == false ||
+        joinPath(childTargetPath, sizeof(childTargetPath), targetDir, entry->d_name) == false) {
+      continue;
+    }
 
     struct stat statinfo;
     if (stat(childLocalPath, &statinfo) == -1) {
@@ -434,8 +473,10 @@ void pushFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *localP
 
   char localPath[1024];
   char remotePath[1024];
-  trimTrailingSlash(localPath, sizeof(localPath), localPathOrDir);
-  trimTrailingSlash(remotePath, sizeof(remotePath), targetPath);
+  if (trimTrailingSlash(localPath, sizeof(localPath), localPathOrDir) == false ||
+      trimTrailingSlash(remotePath, sizeof(remotePath), targetPath) == false) {
+    return;
+  }
 
   struct stat statinfo;
   if (stat(localPath, &statinfo) == -1) {

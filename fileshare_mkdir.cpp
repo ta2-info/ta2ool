@@ -12,13 +12,14 @@ void fileshare_mkdirCommand(Options *options) {
 
   // 省略不可
   char tmpPath1[1024];
-  strcpy(tmpPath1, "Documents/");
   const char *targetPath = options->GetNextArgument();
   if (targetPath == nullptr) {
     fprintf(stderr, "名称が指定されていない\n");
     return;
   }
-  strcat(tmpPath1, targetPath);
+  if (makeDocumentsPath(tmpPath1, sizeof(tmpPath1), targetPath) == false) {
+    return;
+  }
 
   AMDeviceRef deviceRef = GetTargetDevice(options);
   if (deviceRef == nullptr) {

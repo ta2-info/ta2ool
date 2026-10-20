@@ -18,8 +18,9 @@ void fileshare_rmCommand(Options *options) {
     return;
   }
   char tmpPath[1024];
-  strcpy(tmpPath, "Documents/");
-  strcat(tmpPath, basePath);
+  if (makeDocumentsPath(tmpPath, sizeof(tmpPath), basePath) == false) {
+    return;
+  }
 
   AMDeviceRef deviceRef = GetTargetDevice(options);
   if (deviceRef == nullptr) {

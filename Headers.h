@@ -15,5 +15,6 @@ void renameFile(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *oldp
 void makeDirectory(AMDeviceRef deviceRef, AFCConnectionRef afcCnn, const char *path);
 const char * getFilename(const char *filePath);
 bool isDirInLocal(const char *pathOrDir);
+bool makeDocumentsPath(char *dst, size_t dstSize, const char *path);
 }
 

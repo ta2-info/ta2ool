@@ -18,13 +18,13 @@ void fileshare_pushCommand(Options *options) {
   }
 
   char tmpPath[1024];
-  strcpy(tmpPath, "Documents/");
   // 省略可能
   const char * targetPath = options->GetNextArgument();
-  if (targetPath != nullptr) {
-    strcat(tmpPath, targetPath);
-  } else {
-    strcat(tmpPath, localPathOrDir);
+  if (targetPath == nullptr) {
+    targetPath = localPathOrDir;
+  }
+  if (makeDocumentsPath(tmpPath, sizeof(tmpPath), targetPath) == false) {
+    return;
   }
 
   AMDeviceRef deviceRef = GetTargetDevice(options);

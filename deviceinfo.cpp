@@ -17,8 +17,11 @@ void printInfo(AMDeviceRef device, const char *header, const char *domain, const
   if (valueRef != nullptr) {
     if (CFGetTypeID(valueRef) == CFStringGetTypeID()) {
       char valueBuffer[1024];
-      CFStringGetCString((CFStringRef) valueRef, valueBuffer, sizeof(valueBuffer), kCFStringEncodingUTF8);
-      printf("%s\t%s\n", header, valueBuffer);
+      if (CFStringGetCString((CFStringRef) valueRef, valueBuffer, sizeof(valueBuffer), kCFStringEncodingUTF8)) {
+        printf("%s\t%s\n", header, valueBuffer);
+      } else {
+        printf("%s\t??\n", header);
+      }
     } else if (CFGetTypeID(valueRef) == CFBooleanGetTypeID()) {
       Boolean value = CFBooleanGetValue((CFBooleanRef) valueRef);
       printf("%s\t%s\n", header, (value ? "True" : "False"));

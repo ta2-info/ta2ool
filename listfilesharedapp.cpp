@@ -12,7 +12,9 @@ static void printKeysAndValues(const void* key, const void* value, void* context
   CFBooleanRef fileSharing = (CFBooleanRef) CFDictionaryGetValue(dic, CFSTR("UIFileSharingEnabled"));
   if (fileSharing != nullptr && CFBooleanGetValue(fileSharing)) {
     char bundleID[1024];
-    CFStringGetCString((CFStringRef) key, bundleID, sizeof(bundleID), kCFStringEncodingUTF8);
+    if (CFStringGetCString((CFStringRef) key, bundleID, sizeof(bundleID), kCFStringEncodingUTF8) == false) {
+      return;
+    }
     puts(bundleID);
   }
 

@@ -9,7 +9,9 @@ extern "C" {
 
 static void printKeysAndValues(const void* key, const void* value, void* context) {
   char bundleID[1024];
-  CFStringGetCString((CFStringRef) key, bundleID, sizeof(bundleID), kCFStringEncodingUTF8);
+  if (CFStringGetCString((CFStringRef) key, bundleID, sizeof(bundleID), kCFStringEncodingUTF8) == false) {
+    return;
+  }
 
   printf("%s\n", bundleID);
 }

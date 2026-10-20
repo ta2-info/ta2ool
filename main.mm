@@ -11,8 +11,7 @@ static void* mainJobThread(void* arg) {
     Options *options = (Options *)arg;
 
     char commandFunctionName[1024];
-    strcpy(commandFunctionName, options->GetCommand());
-    strcat(commandFunctionName, "Command");
+    snprintf(commandFunctionName, sizeof(commandFunctionName), "%sCommand", options->GetCommand());
 
     void (*commandFunction)(Options *) = (void (*)(Options *))dlsym(RTLD_SELF, commandFunctionName);
     if (commandFunction == nullptr) {
